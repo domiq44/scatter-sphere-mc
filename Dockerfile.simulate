@@ -1,0 +1,25 @@
+FROM fedora:44 AS builder
+
+###RUN dnf upgrade -y
+###RUN dnf install -y gcc make cmake git wget tar gnuplot
+RUN dnf install -y gcc make cmake git wget tar && \
+    dnf clean all
+
+WORKDIR /app
+COPY . .
+RUN make clean && make simulate
+
+FROM fedora:44 AS runtime
+
+###RUN dnf upgrade -y
+RUN dnf install -y gnuplot && \
+    dnf clean all
+
+WORKDIR /app
+RUN mkdir -p /app/results && chmod 777 /app/results
+
+COPY --from=builder /app/simulate /app/simulate
+COPY config.toml /app/config.toml
+
+# 🔥 containerd/k0s-proof : forcer le cwd
+ENTRYPOINT ["sh", "-c", "cd /app && exec ./simulate"]

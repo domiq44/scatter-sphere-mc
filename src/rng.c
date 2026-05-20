@@ -1,0 +1,26 @@
+#include "rng.h"
+#include <stdint.h>
+
+void rng_seed(Rng *rng, uint64_t seed)
+{
+    if (seed == 0)
+        seed = 1; // éviter l'état nul
+    rng->state = seed;
+}
+
+uint64_t rng_next_u64(Rng *rng)
+{
+    // Xorshift64*
+    uint64_t x = rng->state;
+    x ^= x << 13;
+    x ^= x >> 7;
+    x ^= x << 17;
+    rng->state = x;
+    return x;
+}
+
+double rng_next_f64(Rng *rng)
+{
+    // 53 bits de précision
+    return (rng_next_u64(rng) >> 11) * (1.0 / 9007199254740992.0);
+}

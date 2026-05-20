@@ -1,0 +1,71 @@
+# --- Binaires ---
+simulate
+plot
+tests_runner
+
+# --- Objets compilés ---
+*.o
+*.a
+*.so
+*.out
+
+# --- Répertoires de build ---
+obj/
+build/
+dist/
+
+# --- Résultats de simulation ---
+results/
+output/
+plots/
+
+# Ignorer les images générées automatiquement…
+*.png
+*.svg
+*.pdf
+*.csv
+
+# …mais garder l’exemple versionné à la racine
+!example1.png
+!example2.png
+
+# --- Fichiers temporaires ---
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+
+# --- Fichiers générés par les tests ---
+test_output/
+coverage/
+*.gcda
+*.gcno
+*.gcov
+
+# --- Logs ---
+*.log
+
+# --- OS-specific ---
+.DS_Store
+Thumbs.db
+
+# --- Editor-specific ---
+.vscode/
+.idea/
+*.code-workspace
+
+# --- Kubernetes ---
+k8s/job.yaml
+
+# --- Fichiers TOML générés automatiquement par sweep.sh ---
+/config.*.toml
+
+# …mais garder les fichiers TOML de référence
+!/config.toml
+!/config.template.toml
+
+# --- Rapport HTML généré automatiquement ---
+/report.html
+/report_interactif.html

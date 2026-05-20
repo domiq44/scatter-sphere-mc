@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cppcheck \
+            clang-tools \
+            valgrind
+
+      - name: Static analysis (cppcheck)
+        run: |
+          cppcheck \
+            --enable=all \
+            --inconclusive \
+            --error-exitcode=1 \
+            -I include \
+            --check-config \
+            src include
+
+      - name: Static analysis (scan-build)
+        run: |
+          scan-build --status-bugs make clean all
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # -----------------------------
+      # Lint stage (clang-tidy inside Docker)
+      # -----------------------------
+      - name: Run clang-tidy inside Docker (lint stage)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.tests
+          target: lint
+          outputs: type=docker
+          tags: scatter-sphere:lint
+
+      # -----------------------------
+      # Build test stage
+      # -----------------------------
+      - name: Build test stage
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.tests
+          target: test
+          outputs: type=docker
+          tags: scatter-sphere:test
+
+      - name: Run tests
+        run: docker run --rm scatter-sphere:test
+
+      - name: Memory analysis (valgrind)
+        run: |
+          docker run --rm scatter-sphere:test \
+            valgrind --leak-check=full --track-origins=yes --error-exitcode=1 ./tests_runner
+
+      - name: Build simulate image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.simulate
+          target: runtime
+          outputs: type=docker
+          tags: scatter-sphere:simulate
+
+      - name: Smoke test simulate
+        run: docker run --rm scatter-sphere:simulate --help || true
+
+      - name: Build plot image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.plot
+          target: runtime
+          outputs: type=docker
+          tags: scatter-sphere:plot
+
+      - name: Smoke test plot
+        run: docker run --rm scatter-sphere:plot || true

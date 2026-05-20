@@ -1,0 +1,34 @@
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-command-processor,
+  -bugprone-unchecked-string-to-number-conversion,
+  -bugprone-reserved-identifier,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -clang-analyzer-security.insecureAPI.strcpy,
+  -clang-analyzer-security.insecureAPI.strcat,
+  -clang-analyzer-security.ArrayBound,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-math-missing-parentheses,
+  -readability-function-size,
+  -readability-braces-around-statements,
+  -modernize-*,
+  -cppcoreguidelines-*,
+  -hicpp-*,
+  -llvm-*,
+  -google-*,
+  -cert-*,
+  -altera-*,
+  -zircon-*,
+  -fuchsia-*
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: 'src/.*'
+
+FormatStyle: none

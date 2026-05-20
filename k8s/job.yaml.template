@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: scatter-sphere-job
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: scatter-sphere
+          image: ${IMAGE_NAME}
+          workingDir: /app
+          volumeMounts:
+            - name: results
+              mountPath: /app/results
+      volumes:
+        - name: results
+          hostPath:
+            path: ${PROJECT_HOME}/results
+            type: DirectoryOrCreate

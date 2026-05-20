@@ -1,0 +1,43 @@
+# ---- STAGE 0 : Builder ----
+FROM fedora:44 AS builder
+
+###RUN dnf upgrade -y
+RUN dnf install -y \
+        gcc \
+        make \
+        cmake \
+        git \
+        wget \
+        tar \
+        libcmocka \
+        libcmocka-devel \
+        clang \
+        clang-tools-extra \
+        bear \
+    && dnf clean all
+
+WORKDIR /app
+COPY . .
+
+# Génère compile_commands.json pour TOUT le projet
+RUN make clean && \
+    bear -- make -B all tests_runner
+
+# ---- STAGE 1 : Lint ----
+FROM builder AS lint
+
+# clang-tidy utilise la compilation database
+RUN clang-tidy -p /app src/*.c --warnings-as-errors=* || true
+
+# ---- STAGE 2 : Tests ----
+FROM fedora:44 AS test
+
+###RUN dnf upgrade -y
+RUN dnf install -y libcmocka && \
+    dnf clean all
+
+COPY --from=builder /app/tests_runner /tests_runner
+COPY . /app
+
+WORKDIR /app
+ENTRYPOINT ["/tests_runner"]

@@ -1,0 +1,29 @@
+# Nombre total de photons à simuler (sans unité)
+n_photons = 100000
+
+# Coefficient d’extinction σₑ (en 1/kilomètre)
+# Détermine la probabilité d'interaction par unité de longueur.
+# L’épaisseur optique vaut τ = 4/3 × σₑ × radius.
+sigma_e = 50.0
+
+# Albedo (probabilité de diffusion plutôt qu’absorption)
+# Sans unité, compris entre 0 et 1.
+albedo = 1.0
+
+# Paramètre d’asymétrie Henyey–Greenstein g
+# Sans unité, compris entre -1 et 1.
+g = 0.85
+
+# Rayon de la sphère (en mètres)
+# Calculé à partir de l’épaisseur optique cible : τ = 4/3 × σₑ × radius.
+# radius = τ / (4/3 × σₑ)
+radius = {{RADIUS}}
+
+# Nombre de bins pour mu = cos(theta) (sans unité)
+n_mu_bins = 200
+
+# Graine RNG (entier)
+seed = 42
+
+# Angle d’incidence initial θ₀ (en degrés)
+theta_zero = {{ANGLE}}

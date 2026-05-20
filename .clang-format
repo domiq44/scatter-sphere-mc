@@ -1,0 +1,52 @@
+Language: Cpp
+BasedOnStyle: LLVM
+
+# --- Indentation & spacing ---
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+IndentCaseLabels: false
+IndentGotoLabels: false
+
+# --- Alignement minimal pour éviter les diffs inutiles ---
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignConsecutiveMacros: false
+AlignTrailingComments: false
+AlignOperands: false
+AlignAfterOpenBracket: Align
+
+# --- Gestion des lignes ---
+ColumnLimit: 100
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# --- Espaces ---
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesInAngles: false
+
+# --- Includes ---
+SortIncludes: false
+IncludeBlocks: Preserve
+
+# --- Braces ---
+BreakBeforeBraces: Linux
+BraceWrapping:
+  AfterFunction: true
+  AfterControlStatement: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterEnum: true
+
+# --- Commentaires ---
+ReflowComments: false
+
+# --- Divers ---
+KeepEmptyLinesAtTheStartOfBlocks: true
+Cpp11BracedListStyle: false

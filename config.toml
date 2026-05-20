@@ -1,0 +1,8 @@
+n_photons = 100000
+sigma_e = 50.0
+albedo = 1.0
+g = 0.85
+radius = 1.0
+n_mu_bins = 200
+seed = 42
+theta_zero = 30
