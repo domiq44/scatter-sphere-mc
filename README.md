@@ -46,7 +46,7 @@ Ce rendu est produit automatiquement par le pipeline complet :
 simulate → tri → plot
 ```
 
-La distribution angulaire obtenue correspond à une diffusion Henyey–Greenstein dans une géométrie sphérique.
+La distribution angulaire obtenue correspond à une diffusion Henyey–Greenstein dans une géométrie sphérique, avec l'incidence calculée selon l'angle $\theta_0$.
 
 ---
 
@@ -55,6 +55,7 @@ La distribution angulaire obtenue correspond à une diffusion Henyey–Greenstei
 - moteur Monte‑Carlo performant et non biaisé  
 - géométrie sphérique analytique  
 - diffusion Henyey–Greenstein  
+- **Incidence aléatoire :** Les photons sont injectés sur la surface de la sphère de manière uniforme, en projetant leur position sur un plan incliné défini par $\theta_0$.
 - RNG reproductible (uint64 → double IEEE754)  
 - pipeline complet : **simulate → tri → plot**  
 - export CSV + gnuplot  
@@ -137,6 +138,7 @@ Toutes les bibliothèques scientifiques sont embarquées dans les images Docker.
 ### ✔️ `scatter-sphere:simulate`
 - moteur Monte‑Carlo  
 - export CSV  
+- **Support de l'incidence aléatoire sur la projection inclinée.**
 - toolchain GCC Fedora
 
 ### ✔️ `scatter-sphere:plot`
@@ -164,6 +166,7 @@ Couverture :
 - diffusion HG  
 - RNG et reproductibilité  
 - conservation de l’énergie  
+- **Vérification de la distribution d'entrée selon la projection inclinée.**
 - distributions analytiques  
 - stabilité numérique  
 - export CSV  
@@ -177,7 +180,8 @@ Le code est validé par :
 
 - conservation stricte de l’énergie  
 - comparaison à la distribution analytique Henyey–Greenstein  
-- validation de la distribution radiale  
+- validation de la distribution radiale et angulaire de sortie  
+- **Validation de l'uniformité de l'entrée sur la projection inclinée.**
 - reproductibilité du RNG  
 - tests de stabilité numérique  
 - tests Monte‑Carlo sur 46 cas unitaires
