@@ -26,7 +26,7 @@ static int parse_int(const char *s, int *out)
     long value = strtol(s, &end, 10);
     if (end == s || *end != '\0' || errno == ERANGE || value < INT_MIN || value > INT_MAX)
         return 0;
-    *out = (int)value;
+    *out = (int) value;
     return 1;
 }
 
