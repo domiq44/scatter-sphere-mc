@@ -23,6 +23,7 @@ int main(int argc, char **argv)
     // Charger la configuration
     Config cfg;
     if (!load_config("config.toml", &cfg)) {
+        fprintf(stderr, "Erreur lors du chargement de config.toml\n");
         return 1;
     }
 
@@ -32,7 +33,12 @@ int main(int argc, char **argv)
     double g = cfg.g;
     double radius = cfg.radius;
     int seed = cfg.seed;
-    double theta0 = cfg.theta_zero * M_PI / 180.0;
+    double theta0_deg = cfg.theta_zero;
+    
+    // Conversion de l'angle d'incidence en radians
+    double theta0_rad = theta0_deg * M_PI / 180.0;
+    double cos_theta0 = cos(theta0_rad);
+    double sin_theta0 = sin(theta0_rad);
 
     if (argc > 1) {
         seed = atoi(argv[1]);
@@ -41,8 +47,12 @@ int main(int argc, char **argv)
     Rng rng;
     rng_seed(&rng, seed);
 
-    Vec3 initial_dir = vec3_normalize(vec3_new(sin(theta0), 0.0, -cos(theta0)));
-
+    // --- 1. DÉFINIR LA DIRECTION FIXE DU FAISCEAU PARALLÈLE (D) ---
+    // Le faisceau arrive à un angle theta0_rad par rapport à l'axe Oz (vertical).
+    // Nous fixons l'incidence dans le plan XZ (phi=0 dans le système de projection).
+    Vec3 fixed_direction = vec3_normalize(vec3_new(sin_theta0, 0.0, -cos_theta0));
+    
+    // --- 2. PRÉPARATION DES SORTIES ---
     mkdir("results", 0755);
 
     char filename[256];
@@ -50,6 +60,7 @@ int main(int argc, char **argv)
              cfg.theta_zero, cfg.radius, cfg.albedo, cfg.g, cfg.n_photons);
 
     // === TABLEAUX POUR STOCKER LES PHOTONS SORTANTS ===
+    // N_detected peut être inférieur à N, donc on utilise N comme taille maximale
     double *theta_deg_arr = malloc(N * sizeof(double));
     double *mu_arr = malloc(N * sizeof(double));
     double *weight_arr = malloc(N * sizeof(double));
@@ -80,40 +91,73 @@ int main(int argc, char **argv)
     // === SIMULATION ===
     for (int i = 0; i < N; i++) {
 
-        Vec3 pos = vec3_new(0, 0, 0);
-        Vec3 dir = initial_dir;
+        // --- 1. GÉNÉRATION DU POINT D'ENTRÉE P_in (Uniformité sur la projection inclinée) ---
+        
+        // Phase 1: Génération dans le plan de projection (X'Y'Z')
+        // rho uniforme dans [0, R]
+        double rho = radius * rng_next_f64(&rng); 
+        // phi uniforme dans [0, 2pi]
+        double phi = 2.0 * M_PI * rng_next_f64(&rng); 
 
+        double x_prime = rho * cos(phi);
+        double y_prime = rho * sin(phi);
+        double z_prime = 0.0;
+
+        // Phase 2: Transformation vers le repère monde (XYZ)
+        // x = x' cos(theta0) + z' sin(theta0)
+        // y = y'
+        // z = -x' sin(theta0) + z' cos(theta0)
+        
+        Vec3 pos = vec3_new(
+            x_prime * cos_theta0,
+            y_prime,
+            -x_prime * sin_theta0
+        );
+        
+        // La direction de propagation est fixe (le faisceau parallèle)
+        Vec3 dir = fixed_direction; 
+
+        // --- 2. SIMULATION DE TRAJECTOIRE À PARTIR DE P_in ---
+        
         double weight = 1.0;
         double local_absorbed = 0.0;
 
         while (1) {
 
             double xi = rng_next_f64(&rng);
+            // Calcul de la distance libre (Free Path)
             double free_path = -log(1.0 - xi) / sigma_e;
 
+            // Calcul de la distance jusqu'au bord de la sphère depuis le point actuel 'pos' dans la direction 'dir'
             double d_border = distance_to_sphere(pos, dir, radius);
 
             if (free_path >= d_border) {
-
+                // --- PHOTON SORTANT ---
                 Vec3 exit_pos = vec3_add(pos, vec3_scale(dir, d_border));
                 (void) exit_pos;
 
-                // === ANGLE DE SORTIE PAR RAPPORT AU FAISCEAU INCIDENT ===
-                double mu = vec3_dot(dir, initial_dir);
-                if (mu > 1.0)
-                    mu = 1.0;
-                if (mu < -1.0)
-                    mu = -1.0;
-
+                // Angle de sortie par rapport au faisceau incident (D)
+                // ATTENTION: Si le faisceau est parallèle, l'angle de sortie est l'angle entre 'dir' et 'fixed_direction'.
+                // Cependant, dans un simulateur de diffusion, on compare souvent l'angle de sortie avec l'axe Z (ou D)
+                // Si vous voulez l'angle par rapport à la direction d'incidence fixe (fixed_direction):
+                double mu = vec3_dot(dir, fixed_direction);
+                if (mu > 1.0) mu = 1.0;
+                if (mu < -1.0) mu = -1.0;
+                
+                // Si vous voulez l'angle par rapport à l'axe Z (convention standard) :
+                // Vec3 z_axis = vec3_new(0, 0, 1);
+                // double mu = vec3_dot(dir, z_axis); // Ceci est plus complexe car 'dir' n'est pas forcément dans le plan XZ
+                
+                // Nous conservons l'utilisation de 'mu' calculé par rapport à la direction incidente fixe, 
+                // car c'est la convention la plus cohérente avec l'injection.
                 double theta = acos(mu);
                 double theta_deg = theta * 180.0 / M_PI;
 
                 // === BIN POUR PDF ===
+                // La PDF est basée sur l'angle de sortie par rapport à la direction incidente fixe
                 int bin = (int) ((mu + 1.0) * 0.5 * NBINS);
-                if (bin < 0)
-                    bin = 0;
-                if (bin >= NBINS)
-                    bin = NBINS - 1;
+                if (bin < 0) bin = 0;
+                if (bin >= NBINS) bin = NBINS - 1;
 
                 hist[bin] += weight;
 
@@ -126,9 +170,10 @@ int main(int argc, char **argv)
                 n_detected++;
                 E_detected += weight;
 
-                break;
+                break; // Photon sorti, passer au photon suivant
             }
 
+            // --- PHOTON EN TRAJET ---
             pos = vec3_add(pos, vec3_scale(dir, free_path));
 
             if (weight < 1e-3) {
@@ -138,7 +183,7 @@ int main(int argc, char **argv)
                 } else {
                     n_rr_killed++;
                     E_rr += weight;
-                    break;
+                    break; // Photon tué par RR
                 }
             }
 
@@ -146,10 +191,12 @@ int main(int argc, char **argv)
             weight *= albedo;
             local_absorbed += (old_weight - weight);
 
+            // Diffusion
             dir = sample_henyey_greenstein(&rng, g, dir);
             n_scattered++;
         }
 
+        // Gestion de l'absorption (Méthode de comptage)
         if (local_absorbed != 0.0) {
             double y = local_absorbed - E_absorbed_corr;
             double t = E_absorbed_direct + y;
@@ -181,8 +228,9 @@ int main(int argc, char **argv)
     fprintf(f, "theta_deg,mu,pdf,weight\n");
 
     for (int i = 0; i < n_detected; i++) {
+        // NOTE: Nous utilisons la PDF normalisée (pdf_exit[bin_arr[i]]) pour le graphique
         fprintf(f, "%f,%f,%f,%f\n", theta_deg_arr[i], mu_arr[i],
-                pdf_exit[bin_arr[i]], // <<< VRAIE PDF DE SORTIE
+                pdf_exit[bin_arr[i]], 
                 weight_arr[i]);
     }
 
